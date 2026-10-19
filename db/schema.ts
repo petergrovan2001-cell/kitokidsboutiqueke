@@ -22,6 +22,13 @@ export const orders = pgTable("orders", {
   total: integer().notNull(),
   status: text().notNull().default("pending_payment"),
   mpesaCode: text("mpesa_code"),
+  mpesaPhone: text("mpesa_phone"),
+  checkoutRequestId: text("checkout_request_id"),
+  merchantRequestId: text("merchant_request_id"),
+  paymentStatus: text("payment_status"),
+  paymentMessage: text("payment_message"),
+  paymentRequestedAt: timestamp("payment_requested_at"),
+  paidAt: timestamp("paid_at"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
