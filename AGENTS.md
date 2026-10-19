@@ -58,9 +58,17 @@ Product prices and order totals are stored as plain integers in Kenyan Shillings
 
 ## Payments
 
-There is no Safaricom Daraja API integration. Checkout creates an order with status `pending_payment`, then the confirmation page (`/orders/$orderId`) displays the M-Pesa number (`0143279060`) and instructs the buyer to send money and paste the resulting M-Pesa confirmation code into a form. Submitting that code moves the order to `pending_confirmation`. Shop staff verify the payment manually against their M-Pesa statement and advance the order to `confirmed` → `shipped` → `delivered` from `/admin`.
+Checkout creates an order with status `pending_payment`. The confirmation page (`/orders/$orderId`) offers M-Pesa Express (STK Push) via the Safaricom Daraja API:
 
-If real-time STK Push confirmation is needed later, add Safaricom Daraja credentials as environment variables and extend `src/lib/orders.ts`.
+1. The buyer enters their Safaricom number; `requestStkPush` (`src/lib/orders.ts`) calls Daraja and stores the `CheckoutRequestID` on the order (`payment_status = pending`).
+2. Safaricom posts the result to `/api/mpesa/callback` (`src/routes/api/mpesa/callback.ts`). Callbacks are unsigned, so a success is re-verified with an STK query and the amount is checked before the order is marked `paid` and moved to `confirmed` with the M-Pesa receipt number.
+3. The page polls `getPaymentStatus`, which also queries Daraja directly if the callback is slow, so payments resolve even when callbacks are lost.
+
+Daraja helpers live in `src/lib/mpesa.ts`; order updates from payment results live in `src/lib/mpesa-orders.ts`. Both are server-only.
+
+Environment variables: `MPESA_ENV` (`sandbox` | `production`, default sandbox), `MPESA_CONSUMER_KEY`, `MPESA_CONSUMER_SECRET`, `MPESA_SHORTCODE`, `MPESA_PASSKEY`, optional `MPESA_TRANSACTION_TYPE` (`CustomerPayBillOnline` default, or `CustomerBuyGoodsOnline` for tills), `MPESA_PARTY_B` (till number when using Buy Goods), `MPESA_CALLBACK_URL` (override the auto-detected callback URL). In sandbox the shortcode/passkey default to Safaricom's public test values. STK Push is hidden until the consumer key and secret are set.
+
+The original manual flow (send money to `0143279060`, paste the confirmation code → `pending_confirmation`, staff verify) is kept as a fallback on the same page.
 
 ## Admin access
 

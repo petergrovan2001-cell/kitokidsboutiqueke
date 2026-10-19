@@ -316,8 +316,25 @@ function AdminPage() {
                 <p className="text-sm text-gray-500">
                   {order.phone} &middot; {order.address}
                 </p>
-                {order.mpesaCode && (
-                  <p className="text-sm text-green-700">M-Pesa code: {order.mpesaCode}</p>
+                {order.paymentStatus === 'paid' ? (
+                  <p className="text-sm text-green-700 font-semibold">
+                    Paid via STK Push{order.mpesaCode ? ` · Receipt ${order.mpesaCode}` : ''}
+                    {order.mpesaPhone ? ` · +${order.mpesaPhone}` : ''}
+                  </p>
+                ) : (
+                  <>
+                    {order.mpesaCode && (
+                      <p className="text-sm text-green-700">
+                        M-Pesa code (manual, verify on statement): {order.mpesaCode}
+                      </p>
+                    )}
+                    {order.paymentStatus === 'pending' && (
+                      <p className="text-sm text-amber-600">Waiting for buyer to enter M-Pesa PIN</p>
+                    )}
+                    {order.paymentStatus === 'failed' && order.paymentMessage && (
+                      <p className="text-sm text-red-600">STK failed: {order.paymentMessage}</p>
+                    )}
+                  </>
                 )}
               </div>
               <div className="font-bold text-pink-600">{formatKES(order.total)}</div>
